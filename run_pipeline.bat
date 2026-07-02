@@ -4,6 +4,16 @@ setlocal
 if not exist "output_imgs" mkdir "output_imgs"
 if not exist "comparisons" mkdir "comparisons"
 
+echo Building binaries...
+cargo build --release
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo Build failed! Aborting pipeline.
+    pause
+    exit /b %ERRORLEVEL%
+)
+echo.
+
 echo Running Edge Detection
 for %%F in (UDED\imgs\*.png) do (
     echo Processing: %%~nxF
