@@ -24,7 +24,12 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7cbdda47-1eae-4a90-a8af-d4be1b15e96d" name="Changes" comment="" />
+    <list default="true" id="7cbdda47-1eae-4a90-a8af-d4be1b15e96d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/UDED" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -59,7 +64,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -103,7 +108,7 @@
       <option name="presentableId" value="Default" />
       <updated>1782858362555</updated>
       <workItem from="1782858364768" duration="4912000" />
-      <workItem from="1782936736212" duration="18204000" />
+      <workItem from="1782936736212" duration="19080000" />
     </task>
     <servers />
   </component>

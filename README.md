@@ -1,138 +1,101 @@
 # edge-detect
 
-A command-line edge detection pipeline written in Rust.
-
-## What it does
-
-```
-Input image → Greyscale → Sobel gradients → Non-maximum suppression → Threshold → Edge map
-```
-
-| Step | Detail |
-|------|--------|
-| **Load** | Any format supported by the `image` crate (PNG, JPEG, BMP, PGM…); colour images are auto-converted to greyscale. |
-| **Convolve** | Custom 2-D discrete convolution implemented from scratch in `src/convolution.rs`. No library convolution function is used. |
-| **Sobel gradients** | Gx and Gy computed via two convolutions with the standard 3×3 Sobel kernels. Gradient magnitude = √(Gx²+Gy²); direction = atan2(Gy, Gx). |
-| **Non-maximum suppression** | The gradient direction is quantised to one of four axes (0°, 45°, 90°, 135°). A pixel is kept only if its magnitude exceeds both neighbours along that axis. This thins ridges to single-pixel edges. |
-| **Threshold** | Single hard threshold (default) or Canny-style hysteresis with low = 0.4 × high. An automatic threshold (70th percentile of non-zero NMS values) is used when `--threshold` is not specified. |
-| **Save** | Binary greyscale PNG (255 = edge, 0 = background). |
+A command-line edge detection pipeline written in Rust, implemented as a take-home exercise.  
+The pipeline follows the classical Canny architecture: Gaussian smoothing → gradient computation (Scharr operator) → non-maximum suppression → hysteresis thresholding.
 
 ---
 
-## Build
+## Structure
+
+The project is split into a library crate (`edge_detect`) and a thin binary (`edge-detect`), organised into five modules:
+
+| Module | Responsibility |
+|---|---|
+| `main` | CLI parsing, I/O, pipeline orchestration |
+| `convolution` | Generic 2D convolution over flat row-major buffers |
+| `sobel` | Gradient magnitude and orientation via the Scharr operator |
+| `nms` | Non-maximum suppression |
+| `threshold` | Hysteresis thresholding |
+
+Each module is independently unit-testable. The Scharr operator is used in place of standard Sobel because it better approximates the true image gradient at diagonal orientations. Hysteresis thresholding is applied in the final stage.
+
+---
+
+## Usage
 
 ```bash
-cargo build --release
+cargo run --release --bin edge-detect -- \
+  --input <input_img> \
+  --output <output_img> \
+  [--threshold <value>]
 ```
 
-Requires stable Rust (≥ 1.85 for the 2024 edition).  No `unsafe` blocks are used.
-
----
-
-## Run
+**Example**
 
 ```bash
-# Automatic threshold
-cargo run --release -- --input UDED/imgs/12-cameraman.png --output edges.png
-
-# Explicit threshold
-cargo run --release -- --input UDED/imgs/12-cameraman.png --output edges.png --threshold 80
-
-# Hysteresis thresholding (Canny-style)
-cargo run --release -- --input UDED/imgs/12-cameraman.png --output edges.png --threshold 80 --hysteresis
-
-# Short flags also work
-cargo run --release -- -i input.png -o output.png -t 100
-```
-
-After `cargo build --release` the binary is at `target/release/edge-detect`:
-
-```bash
-./target/release/edge-detect --input img.png --output edges.png
+cargo run --release --bin edge-detect -- \
+  --input UDED/imgs/12-cameraman.png \
+  --output output_imgs/12-cameraman_edges.png \
+  --threshold 0.15
 ```
 
 ---
 
-## Run tests
+## Evaluation
 
-```bash
-cargo test
-```
+Ground truth edge images were sourced from the [UDED dataset](https://github.com/xavysp/UDED).
 
-Tests cover:
-
-- `convolution` — identity kernel, zero kernel, box blur, Sobel on flat image, 5×5 kernel.
-- `sobel` — zero gradient on flat image, high Gx on a hard vertical edge.
-- `nms` — single peak survives, isolated zero field stays zero.
-- `threshold` — single threshold binarisation, hysteresis propagation chain, isolated weak pixel suppression, auto-threshold range.
+- **`compare.rs`** — places the algorithm output and ground truth side by side for visual inspection (generated with LLM assistance).
+- **`run_pipeline.bat`** — runs the full pipeline over every image in `UDED/imgs/`, writing edge outputs to `output_imgs/` and side-by-side comparisons to `comparisons/`.
 
 ---
 
-## CLI reference
+## Resources
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--input`     | `-i` | *(required)* | Path to the input image |
-| `--output`    | `-o` | *(required)* | Path for the output PNG edge map |
-| `--threshold` | `-t` | auto (70th percentile) | Magnitude threshold on the Sobel scale (roughly 0–1442) |
-| `--hysteresis`|  —   | `false` | Enable Canny-style hysteresis thresholding |
+Videos that were useful for getting up to speed with Rust:
 
----
+- [The Rust Programming Language — Introduction](https://www.youtube.com/watch?v=0y6RKiIk6cs)
+- [Rust Crash Course](https://www.youtube.com/watch?v=br3GIIQeefY)
+- [Rust for Beginners](https://www.youtube.com/watch?v=784JWR4oxOI)
 
-## Design decisions and trade-offs
-
-### Border handling — zero-padding
-
-When the convolution kernel extends outside the image boundary, the out-of-bounds samples are treated as 0 (zero-padding).  This is the simplest correct choice and is well-documented in the code.  **Alternatives:**
-
-- *Replicate* (clamp to border pixel) reduces the magnitude drop at edges but adds complexity.
-- *Reflect* mirrors the image and avoids discontinuities; useful when edge accuracy at the image border matters.
-
-For most practical images the 1-pixel border artefact from zero-padding is invisible.
-
-### Threshold scale
-
-Sobel magnitudes are in the range [0, ≈1442] for 8-bit greyscale input.  The automatic threshold (70th percentile) is computed from the post-NMS non-zero pixels, so it adapts to image contrast without needing manual tuning.
-
-### Hysteresis as a flag
-
-Hysteresis was implemented as an opt-in flag rather than the default, because it introduces a second free parameter (low/high ratio).  The fixed `low = 0.4 × high` ratio follows the convention used in OpenCV's Canny implementation.
-
-### Module structure
-
-```
-src/
-  main.rs          — CLI (clap derive), pipeline orchestration, I/O
-  convolution.rs   — Generic 2-D convolution, unit tests
-  sobel.rs         — Sobel Gx/Gy kernels, magnitude + direction
-  nms.rs           — Non-maximum suppression, unit tests
-  threshold.rs     — Single threshold, hysteresis flood-fill, auto-threshold
-```
-
-Each module has a single clear responsibility and is tested independently.
+Lessons learned are documented in [this Google Doc](https://docs.google.com/document/d/1RCHmQ-_pXGLGYKczTezbK-9o2UkHUHrFaMUogIkCFdM/edit?usp=sharing).
 
 ---
 
-## What I would improve with more time
+## What I would improve given more time
 
-1. **Gaussian pre-smoothing** — A 5×5 Gaussian blur before Sobel would reduce noise sensitivity. The convolution machinery is already in place; it's just one more kernel call.
-2. **Parallelism with Rayon** — The convolution double-loop is embarrassingly parallel. Adding `use rayon::prelude::*; (0..height).into_par_iter()` would be a near-zero-risk speedup.
-3. **Generic pixel type** — Parameterising `convolve2d` over `T: Into<f32>` via a trait bound would allow the same function to handle `u8`, `u16`, and `f32` images without duplication.
-4. **Criterion benchmarks** — The convolution step is the performance bottleneck; a `benches/` crate would make optimisation data-driven.
-5. **Replicate border mode** — Higher-quality edges at the image boundary, relevant when the region of interest extends to the frame.
-6. **Progress output / logging** — Replace `println!` with the `log` + `env_logger` crates for configurable verbosity.
+1. **In-place buffer mutation across pipeline stages.**  
+   Currently each stage allocates and returns a new buffer, taking ownership of the previous stage's output. A more efficient design would pass a mutable reference to a shared output buffer and write into it in place, eliminating intermediate heap allocations.
+
+2. **Fixed-point intermediate arithmetic.**  
+   The pipeline carries `f32` buffers throughout, which is convenient but memory-intensive. Convolution intermediates can exceed the `[0, 255]` range, so true 8-bit arithmetic is not straightforward — but a fixed-point representation with appropriate scaling would reduce memory footprint significantly at the cost of some implementation complexity.
+
+3. **Configurable pipeline parameters.**  
+   Kernel size, border padding mode, and thresholding strategy are currently fixed at compile time. Exposing these through the CLI would make the system more flexible and make it easier to evaluate trade-offs against ground truth data.
+
+4. **Static allocation for safety-critical deployment.**  
+   The current design allocates pixel buffers on the heap at runtime. For a safety-critical embedded context (ISO 26262 ASIL-B and above), all memory should be allocated statically at startup with no dynamic allocation during operation.
+
+5. **Numerical evaluation pipeline.**  
+   Visual inspection against UDED ground truth is useful but not rigorous. A proper evaluation would compute standard edge detection metrics (F-measure, ODS, OIS) against the GT masks, enabling regression testing and quantitative comparison between parameter settings.
+
+6. **Multi-scale edge detection.**  
+   A single Gaussian pre-blur at one sigma makes the detector sensitive to edges at one spatial scale only. Applying the pipeline at multiple sigma values and fusing the results would improve robustness to fine versus coarse texture.
+
+7. **Edge linking and length filtering.**  
+   The current output contains short, disconnected edge fragments that are perceptually meaningless. A post-processing pass that connects nearby edge endpoints and discards contours below a minimum length threshold would substantially improve output quality.
+
+8. **2D indexing ergonomics.**  
+   Pixel buffers are stored as flat `Vec<f32>` with row-major indexing (`row * width + col`), which gives a single contiguous heap allocation and good cache locality. The [`ndarray`](https://docs.rs/ndarray) crate provides a proper N-dimensional array abstraction with native 2D indexing that would eliminate the manual stride arithmetic, at the cost of an additional dependency. For this exercise, the flat `Vec` is sufficient; `ndarray` would be the right choice in a larger production codebase.
 
 ---
 
-## Rust vs C++ reflections
+## Rust vs C++ — most idiomatic and most awkward
 
-**Most idiomatic:** The ownership model made the pipeline feel naturally compositional. Each stage takes an immutable reference to the previous stage's output and returns a new owned `Vec<f32>` — no aliasing, no lifetime questions, no manual `free`. Error handling with `anyhow::Result` and the `?` operator gave clean early-returns without the verbosity of C++ exception hierarchies or manual `if (err) return err` chains.
+**Most idiomatic: the iterator ecosystem**
 
-**Most awkward:** The numeric indexing arithmetic (`iy as usize * width + ix as usize`) after signed-to-unsigned casts felt clunky compared to C++ pointer arithmetic. Rust forces you to be explicit about sign conversions, which is safer but verbose. I also noticed that Rust's 2-D indexing (flat `Vec` + manual `y * width + x`) is essentially the same as C, and a proper `ndarray`-style type would read more naturally — though adding that dependency felt out of scope for this exercise.
+The most refreshing aspect of the implementation was Rust's iterator ecosystem. In C++, operating on image buffers typically means nested `for` loops with manual index tracking — a constant source of off-by-one errors and silent out-of-bounds accesses. Rust's functional style — chaining `.iter().zip().map().collect()` to compute gradient magnitude and direction — eliminates manual indexing entirely and lets the code express the mathematical transformation directly, without burying it in the mechanics of array traversal.
 
----
+**Most awkward: the absence of implicit numeric promotion**
 
-## Dataset
-
-The `UDED/` folder contains the [Unified Dataset for Edge Detection](https://github.com/xavysp/UDED):
-30 greyscale images (`imgs/`) paired with binary ground-truth edge maps (`gt/`), drawn from BIPED, BSDS500, CITYSCAPES, and other standard benchmarks.
+In C++ you can freely mix `int`, `size_t`, `float`, and `unsigned` in arithmetic expressions and the compiler silently promotes them. In Rust, every boundary between `u32` (image dimensions from the `image` crate), `usize` (array indexing), `isize` (signed offsets for kernel neighbours), and `f32` (pixel values) requires an explicit `as` cast. The convolution inner loop alone accumulates six such casts that would be invisible in equivalent C++. Rust is correct to require this — silent `size_t`-to-`int` narrowing is a real and common C++ bug — but it made the low-level image processing code noticeably more cluttered than its C++ counterpart.

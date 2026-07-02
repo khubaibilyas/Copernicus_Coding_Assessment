@@ -9,6 +9,10 @@ use clap::Parser;
 use image::{GrayImage, ImageReader};
 use std::path::PathBuf;
 
+use nms::non_maximum_suppression;
+use sobel::sobel_gradients;
+use threshold::{auto_threshold, hysteresis_threshold};
+
 // CLI struct to parse cli arguments.
 #[derive(Parser, Debug)]
 #[command(
