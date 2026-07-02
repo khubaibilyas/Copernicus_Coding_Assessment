@@ -1,18 +1,18 @@
 # edge-detect
 
 A command-line edge detection pipeline written in Rust, implemented as a take-home exercise.  
-The pipeline follows the classical Canny architecture: Gaussian smoothing → gradient computation (Scharr operator) → non-maximum suppression → hysteresis thresholding.
+The pipeline follows the classical Canny architecture: gradient computation (Scharr operator) → non-maximum suppression → hysteresis thresholding.
 
 ---
 
 ## Structure
 
-The project is split into a library crate (`edge_detect`) and a thin binary (`edge-detect`), organised into five modules:
+The project is implemented as a thin binary (`edge-detect`), organised into five modules:
 
 | Module | Responsibility |
 |---|---|
 | `main` | CLI parsing, I/O, pipeline orchestration |
-| `convolution` | Generic 2D convolution over flat row-major buffers |
+| `convolution` | Generic 2D convolution |
 | `sobel` | Gradient magnitude and orientation via the Scharr operator |
 | `nms` | Non-maximum suppression |
 | `threshold` | Hysteresis thresholding |
@@ -52,11 +52,7 @@ Ground truth edge images were sourced from the [UDED dataset](https://github.com
 
 ## Resources
 
-Videos that were useful for getting up to speed with Rust:
-
-- [The Rust Programming Language — Introduction](https://www.youtube.com/watch?v=0y6RKiIk6cs)
-- [Rust Crash Course](https://www.youtube.com/watch?v=br3GIIQeefY)
-- [Rust for Beginners](https://www.youtube.com/watch?v=784JWR4oxOI)
+Videos that were useful for getting up to speed with Rust: [1](https://www.youtube.com/watch?v=0y6RKiIk6cs), [2](https://www.youtube.com/watch?v=br3GIIQeefY), [3](https://www.youtube.com/watch?v=784JWR4oxOI)
 
 Lessons learned are documented in [this Google Doc](https://docs.google.com/document/d/1RCHmQ-_pXGLGYKczTezbK-9o2UkHUHrFaMUogIkCFdM/edit?usp=sharing).
 
@@ -68,16 +64,16 @@ Lessons learned are documented in [this Google Doc](https://docs.google.com/docu
    Currently each stage allocates and returns a new buffer, taking ownership of the previous stage's output. A more efficient design would pass a mutable reference to a shared output buffer and write into it in place, eliminating intermediate heap allocations.
 
 2. **Fixed-point intermediate arithmetic.**  
-   The pipeline carries `f32` buffers throughout, which is convenient but memory-intensive. Convolution intermediates can exceed the `[0, 255]` range, so true 8-bit arithmetic is not straightforward — but a fixed-point representation with appropriate scaling would reduce memory footprint significantly at the cost of some implementation complexity.
+   The pipeline carries `f32` buffers throughout, which is convenient but memory-intensive. A fixed-point representation with appropriate scaling would reduce memory footprint significantly at the cost of some implementation complexity.
 
 3. **Configurable pipeline parameters.**  
-   Kernel size, border padding mode, and thresholding strategy are currently fixed at compile time. Exposing these through the CLI would make the system more flexible and make it easier to evaluate trade-offs against ground truth data.
+   Kernel size, border padding mode, and thresholding strategy are currently fixed at compile time. Exposing these through the CLI or implementing a polymorphic design would make the system more flexible and make it easier to evaluate trade-offs against ground truth data.
 
 4. **Static allocation for safety-critical deployment.**  
    The current design allocates pixel buffers on the heap at runtime. For a safety-critical embedded context (ISO 26262 ASIL-B and above), all memory should be allocated statically at startup with no dynamic allocation during operation.
 
 5. **Numerical evaluation pipeline.**  
-   Visual inspection against UDED ground truth is useful but not rigorous. A proper evaluation would compute standard edge detection metrics (F-measure, ODS, OIS) against the GT masks, enabling regression testing and quantitative comparison between parameter settings.
+   Visual inspection against UDED ground truth is useful but not rigorous. A proper evaluation would compute standard edge detection metrics against the GT masks, enabling regression testing and quantitative comparison between parameter settings.
 
 6. **Multi-scale edge detection.**  
    A single Gaussian pre-blur at one sigma makes the detector sensitive to edges at one spatial scale only. Applying the pipeline at multiple sigma values and fusing the results would improve robustness to fine versus coarse texture.
