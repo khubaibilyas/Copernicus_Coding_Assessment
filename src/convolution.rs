@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 // 2D discrete convolution of a single-channel image with a given kernel.
 // I use zero-padding around the borders. If time permits, I may extend functionality to replicating pixels around borders.
 pub fn convolve2d(
@@ -30,30 +32,27 @@ pub fn convolve2d(
 
     let mut output = vec![0.0_f32; width * height];
 
-    for y in 0..height {
-        for x in 0..width {
-            let mut acc = 0.0_f32;
+    output
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(pixel_idx, mut out_pixel)| {
+            let y = pixel_idx / width;
+            let x = pixel_idx % width;
 
-            for ky in 0..kh {
-                for kx in 0..kw {
-                    // Source pixel coordinates with offset from the kernel centre.
+            *out_pixel = 0.0_f32;
+            //Not sure if this can be parallelised as well.
+            for ky in 0..kh{
+                for kx in 0..kw{
                     let iy = y as isize + (ky as isize - half_kh);
                     let ix = x as isize + (kx as isize - half_kw);
 
-                    // If index goes out of bounds, we do not do anything to the accumulator as they are zero-padded.
-                    // For replicate, we will have to change this logic.
                     if iy >= 0 && iy < height as isize && ix >= 0 && ix < width as isize {
                         //Source pixel and kernel values by wrapping y and x into 1D array idx.
-                        let pixel_val = image[iy as usize * width + ix as usize];
-                        let kernel_val = kernel[ky * kw + kx];
-                        acc += pixel_val * kernel_val;
+                        *out_pixel += image[iy as usize * width + ix as usize] * kernel[ky * kw + kx];
                     }
                 }
             }
-
-            output[y * width + x] = acc;
-        }
-    }
+        });
 
     output
 }

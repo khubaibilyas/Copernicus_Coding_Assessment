@@ -26,7 +26,10 @@
   <component name="ChangeListManager">
     <list default="true" id="7cbdda47-1eae-4a90-a8af-d4be1b15e96d" name="Changes" comment="">
       <change afterPath="$PROJECT_DIR$/UDED" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/convolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/convolution.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +109,7 @@
       <option name="presentableId" value="Default" />
       <updated>1782858362555</updated>
       <workItem from="1782858364768" duration="4912000" />
-      <workItem from="1782936736212" duration="19789000" />
+      <workItem from="1782936736212" duration="26324000" />
     </task>
     <servers />
   </component>

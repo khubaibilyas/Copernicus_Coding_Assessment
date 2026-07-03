@@ -52,7 +52,7 @@ Ground truth edge images were sourced from the [UDED dataset](https://github.com
 
 ## Resources
 
-Videos that were useful for getting up to speed with Rust: [1](https://www.youtube.com/watch?v=0y6RKiIk6cs), [2](https://www.youtube.com/watch?v=br3GIIQeefY), [3](https://www.youtube.com/watch?v=784JWR4oxOI)
+Videos that were useful for getting up to speed with Rust: [1](https://www.youtube.com/watch?v=0y6RKiIk6cs), [2](https://www.youtube.com/watch?v=br3GIIQeefY), [3](https://www.youtube.com/watch?v=784JWR4oxOI), [4](https://www.youtube.com/watch?v=YxG7PhZ3fb4)
 
 Lessons learned are documented in [this Google Doc](https://docs.google.com/document/d/1RCHmQ-_pXGLGYKczTezbK-9o2UkHUHrFaMUogIkCFdM/edit?usp=sharing).
 
@@ -84,6 +84,8 @@ Lessons learned are documented in [this Google Doc](https://docs.google.com/docu
 8. **2D indexing ergonomics.**  
    Pixel buffers are stored as flat `Vec<f32>` with row-major indexing (`row * width + col`), which gives a single contiguous heap allocation and good cache locality. The [`ndarray`](https://docs.rs/ndarray) crate provides a proper N-dimensional array abstraction with native 2D indexing that would eliminate the manual stride arithmetic, at the cost of an additional dependency. For this exercise, the flat `Vec` is sufficient; `ndarray` would be the right choice in a larger production codebase.
 
+9. **Benchmark Performance of parallelisation.** 
+	Convolution is now parallelised using Rayon. How well does it improve the runtime performance need to be benchmarked using runtime and static analysis tools because as seen in the tutorial videos, Rayon does, in fact, make runtime worse for smaller vectors.
 ---
 
 ## Rust vs C++ — most idiomatic and most awkward
